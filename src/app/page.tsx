@@ -4,6 +4,8 @@ import { useState } from "react";
 import PrescriptionScanner from "@/components/PrescriptionScanner";
 import MedicineDetails from "@/components/MedicineDetails";
 import DigitalSchedule from "@/components/DigitalSchedule";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import ChatBot from "@/components/ChatBot";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCcw, Heart, ShieldCheck, Search, Loader2 } from "lucide-react";
 
@@ -68,9 +70,18 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="space-y-12"
+              className="space-y-16"
             >
-              <PrescriptionScanner onDataExtracted={setData} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <PrescriptionScanner onDataExtracted={setData} />
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-[3rem] border border-zinc-100 shadow-sm space-y-8">
+                  <div className="text-center space-y-2">
+                    <h3 className="text-2xl font-bold text-zinc-900">Voice Assistant</h3>
+                    <p className="text-zinc-500 text-sm">Ask about any medicine using your voice.</p>
+                  </div>
+                  <VoiceRecorder onAudioCaptured={setData} />
+                </div>
+              </div>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

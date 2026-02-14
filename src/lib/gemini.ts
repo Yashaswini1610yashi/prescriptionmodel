@@ -10,7 +10,7 @@ export const modelNames = [
     "gemini-pro-latest"
 ];
 
-export async function processWithGemini(prompt: string, imageBase64?: string) {
+export async function processWithGemini(prompt: string, imageBase64?: string, audioBase64?: string, audioMimeType?: string) {
     let lastError: any = null;
 
     for (const modelName of modelNames) {
@@ -22,6 +22,15 @@ export async function processWithGemini(prompt: string, imageBase64?: string) {
                     inlineData: {
                         data: imageBase64,
                         mimeType: "image/png",
+                    },
+                });
+            }
+
+            if (audioBase64 && audioMimeType) {
+                content.push({
+                    inlineData: {
+                        data: audioBase64,
+                        mimeType: audioMimeType,
                     },
                 });
             }

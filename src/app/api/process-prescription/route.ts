@@ -7,17 +7,19 @@ export async function POST(req: Request) {
         const formData = await req.formData();
         const image = formData.get("image") as File | null;
         const medicineName = formData.get("medicineName") as string | null;
+        const audio = formData.get("audio") as File | null;
 
-        if (!image && !medicineName) {
-            return NextResponse.json({ error: "Provide an image or medicine name" }, { status: 400 });
+        if (!image && !medicineName && !audio) {
+            return NextResponse.json({ error: "Provide an image, medicine name, or audio note" }, { status: 400 });
         }
 
         let prompt = "";
         if (image) {
+            console.log("Processing image:", image.name, image.type);
             prompt = `
-        You are a world-class handwriting expert and pharmacist. 
+        You are a world-class handwriting expert and pharmacist.
         Scan this prescription and extract medicine names.
-        
+
         For each medicine, return a JSON object with EXACTLY these keys:
         - "name": Correct name (cross-checked for spelling)
         - "dosage": Dosage (e.g., 500mg, 1 tablet)
@@ -32,10 +34,31 @@ export async function POST(req: Request) {
 
         Format the output as a JSON object with a 'medicines' array.
       `;
+        } else if (audio) {
+            console.log("Processing audio note:", audio.name, audio.type);
+            prompt = `
+        You are a pharmacist. Listen to this audio note where a user is asking about a medicine.
+        Identify the medicine name and provide a detailed report.
+
+        Return a JSON object with EXACTLY these keys in a 'medicines' array:
+        - "name": Identified medicine name
+        - "dosage": "See age-based recommendations"
+        - "frequency": "As mentioned/Standard"
+        - "duration": "As mentioned/Standard"
+        - "explanation": Plain English explanation of what it does.
+        - "purpose": Detailed medical purpose and use cases.
+        - "sideEffects": Potential side effects.
+        - "restrictions": Warnings for patients with conditions like diabetes, heart disease, pregnancy, etc.
+        - "ageDosage": { "Children": "Consult doctor", "Adults": "Standard dose", "Elderly": "Use with caution" },
+        - "schedule": ["08:00", "20:00"] (Example default schedule).
+
+        Format the output as a JSON object with a 'medicines' array.
+      `;
         } else {
+            console.log("Processing text lookup:", medicineName);
             prompt = `
         You are a pharmacist. Provide detailed information for the medicine: "${medicineName}".
-        
+
         Return a JSON object with EXACTLY these keys in a 'medicines' array:
         - "name": "${medicineName}"
         - "dosage": "See age-based recommendations"
@@ -66,7 +89,15 @@ export async function POST(req: Request) {
             imageBase64 = processedImageBuffer.toString("base64");
         }
 
-        const response = await processWithGemini(prompt, imageBase64);
+        let audioBase64 = "";
+        let audioMimeType = "";
+        if (audio) {
+            const audioBuffer = Buffer.from(await audio.arrayBuffer());
+            audioBase64 = audioBuffer.toString("base64");
+            audioMimeType = audio.type;
+        }
+
+        const response = await processWithGemini(prompt, imageBase64, audioBase64, audioMimeType);
         const text = response.text();
         const data = extractJSON(text);
 
